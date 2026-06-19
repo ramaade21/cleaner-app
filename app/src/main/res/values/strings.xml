@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">File Cleaner</string>
+    <string name="grant_permission">Berikan Izin Akses File</string>
+    <string name="permission_message">Aplikasi membutuhkan izin akses semua file untuk dapat memindai dan mengelola file di perangkat Anda.</string>
+    <string name="scanning">Memindai…</string>
+    <string name="hidden_files">File Tersembunyi</string>
+    <string name="cache_files">Cache</string>
+    <string name="large_files">File Besar</string>
+    <string name="images">Gambar</string>
+    <string name="videos">Video</string>
+    <string name="documents">Dokumen</string>
+    <string name="others">Lainnya</string>
+    <string name="apk_files">APK</string>
+    <string name="audio_files">Audio</string>
+    <string name="total_storage">Total Penyimpanan</string>
+    <string name="used_storage">Terpakai</string>
+    <string name="delete_selected">Hapus Terpilih</string>
+    <string name="select_all">Pilih Semua</string>
+    <string name="no_files_found">Tidak ada file ditemukan</string>
+</resources>
