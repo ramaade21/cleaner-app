@@ -25,6 +25,7 @@ enum class FileCategory {
     APK,
     ARCHIVE,
     CACHE,
+    APP_DATA,
     OTHER
 }
 
@@ -48,6 +49,9 @@ data class ScanSummary(
     var apkCount: Int = 0,
     var otherSize: Long = 0L,
     var otherCount: Int = 0,
+    var appDataSize: Long = 0L,      // Total ukuran Android/data + Android/obb (data aplikasi terinstall)
+    var appDataCount: Int = 0,
+    var unreadableSize: Long = 0L,   // Estimasi ukuran folder yang gagal dibaca karena permission
     var totalScanned: Long = 0L,
     var totalDeviceStorage: Long = 0L,
     var freeStorage: Long = 0L

@@ -20,5 +20,6 @@ enum class CategoryType {
     AUDIO,
     DOCUMENT,
     APK,
+    APP_DATA,
     OTHER
 }

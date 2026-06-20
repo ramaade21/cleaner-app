@@ -17,4 +17,7 @@
     <string name="delete_selected">Hapus Terpilih</string>
     <string name="select_all">Pilih Semua</string>
     <string name="no_files_found">Tidak ada file ditemukan</string>
+    <string name="app_data">Data Aplikasi</string>
+    <string name="app_data_desc">Berisi data &amp; cache dari semua aplikasi terinstall (game, dll). Tidak bisa dirinci per file karena dibatasi sistem Android, tapi ukurannya tetap dihitung di total ini.</string>
+
 </resources>

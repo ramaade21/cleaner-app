@@ -147,12 +147,30 @@ class MainActivity : AppCompatActivity() {
             CategoryCard(CategoryType.AUDIO, getString(R.string.audio_files), summary.audioSize, summary.audioCount, R.drawable.ic_file),
             CategoryCard(CategoryType.DOCUMENT, getString(R.string.documents), summary.documentSize, summary.documentCount, R.drawable.ic_document),
             CategoryCard(CategoryType.APK, getString(R.string.apk_files), summary.apkSize, summary.apkCount, R.drawable.ic_file),
+            CategoryCard(CategoryType.APP_DATA, getString(R.string.app_data), summary.appDataSize, summary.appDataCount, R.drawable.ic_app_data),
             CategoryCard(CategoryType.OTHER, getString(R.string.others), summary.otherSize, summary.otherCount, R.drawable.ic_file)
         )
 
         binding.recyclerCategories.layoutManager = GridLayoutManager(this, 2)
         binding.recyclerCategories.adapter = CategoryAdapter(cards) { card ->
             openFileList(card.type)
+        }
+
+        // Hitung selisih antara storage terpakai sesungguhnya vs total yang berhasil
+        // dipindai & dikategorikan (hiddenFilesSize tidak ditambahkan karena nilainya
+        // sudah termasuk di dalam kategori lain seperti image/video/dokumen, jadi akan
+        // dobel jika dijumlahkan lagi di sini). Selisihnya biasanya folder yang dibatasi
+        // sistem (misal sebagian Android/data milik app tertentu yang tetap terkunci
+        // meski "All Files Access" sudah aktif). Ditampilkan agar tidak menyesatkan pengguna.
+        val totalCategorized = summary.cacheSize + summary.imageSize + summary.videoSize +
+            summary.audioSize + summary.documentSize + summary.apkSize +
+            summary.appDataSize + summary.otherSize
+        val unaccounted = used - totalCategorized
+
+        if (unaccounted > FileScanner.LARGE_FILE_THRESHOLD) {
+            binding.tvScanProgress.text = "Catatan: ${FileUtils.formatSize(unaccounted)} terpakai oleh sistem/app yang tidak bisa dipindai detail (folder dibatasi Android)"
+        } else {
+            binding.tvScanProgress.text = ""
         }
     }
 

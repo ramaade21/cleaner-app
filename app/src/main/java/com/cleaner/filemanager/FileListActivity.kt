@@ -2,9 +2,14 @@ package com.cleaner.filemanager
 
 import android.app.AlertDialog
 import android.os.Bundle
+import android.text.format.DateFormat
+import android.view.LayoutInflater
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
 import com.cleaner.filemanager.adapter.FileListAdapter
 import com.cleaner.filemanager.databinding.ActivityFileListBinding
 import com.cleaner.filemanager.model.CategoryType
@@ -61,12 +66,28 @@ class FileListActivity : AppCompatActivity() {
         CategoryType.AUDIO -> getString(R.string.audio_files)
         CategoryType.DOCUMENT -> getString(R.string.documents)
         CategoryType.APK -> getString(R.string.apk_files)
+        CategoryType.APP_DATA -> getString(R.string.app_data)
         CategoryType.OTHER -> getString(R.string.others)
     }
 
     private fun loadFiles(type: CategoryType) {
         binding.progressLoading.visibility = android.view.View.VISIBLE
         binding.recyclerFiles.visibility = android.view.View.GONE
+
+        // Data Aplikasi (Android/data, Android/obb) sengaja tidak bisa dihapus dari
+        // sini karena berisiko merusak app lain yang masih terinstall. Untuk membersihkan
+        // data app tertentu, arahkan pengguna ke Settings > Apps > [nama app] > Clear Data.
+        val isDeletable = type != CategoryType.APP_DATA
+        binding.checkSelectAll.visibility = if (isDeletable) android.view.View.VISIBLE else android.view.View.GONE
+        binding.btnDeleteSelected.visibility = if (isDeletable) android.view.View.VISIBLE else android.view.View.GONE
+
+        if (!isDeletable) {
+            Toast.makeText(
+                this,
+                "Data aplikasi tidak bisa dihapus di sini. Untuk membersihkan, buka Settings > Apps > [nama app] > Hapus Cache/Data.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
 
         CoroutineScope(Dispatchers.Default).launch {
             val all = ScanRepository.allFiles
@@ -80,6 +101,7 @@ class FileListActivity : AppCompatActivity() {
                 CategoryType.AUDIO -> all.filter { it.category == FileCategory.AUDIO }
                 CategoryType.DOCUMENT -> all.filter { it.category == FileCategory.DOCUMENT }
                 CategoryType.APK -> all.filter { it.category == FileCategory.APK }
+                CategoryType.APP_DATA -> all.filter { it.category == FileCategory.APP_DATA }
                 CategoryType.OTHER -> all.filter { it.category == FileCategory.OTHER && !it.isDirectory }
             }.sortedByDescending { it.size }.toMutableList()
 
@@ -95,12 +117,73 @@ class FileListActivity : AppCompatActivity() {
                     binding.recyclerFiles.visibility = android.view.View.VISIBLE
                 }
 
-                adapter = FileListAdapter(currentList) { updateSelectionInfo() }
+                adapter = FileListAdapter(
+                    items = currentList,
+                    onSelectionChanged = { updateSelectionInfo() },
+                    onItemClick = { item -> showPreviewDialog(item) },
+                    showCheckbox = isDeletable
+                )
                 binding.recyclerFiles.layoutManager = LinearLayoutManager(this@FileListActivity)
                 binding.recyclerFiles.adapter = adapter
                 updateSelectionInfo()
             }
         }
+    }
+
+    private fun showPreviewDialog(item: FileItem) {
+        val dateStr = DateFormat.format("dd MMM yyyy, HH:mm", item.lastModified)
+        val message = buildString {
+            append("Path: ${item.path}\n")
+            append("Ukuran: ${FileUtils.formatSize(item.size)}\n")
+            append("Diubah: $dateStr")
+        }
+
+        val builder = AlertDialog.Builder(this)
+            .setTitle(item.name)
+            .setMessage(message)
+            .setPositiveButton("Tutup", null)
+
+        // Tampilkan thumbnail preview untuk gambar/video langsung di dialog
+        if (item.category == FileCategory.IMAGE || item.category == FileCategory.VIDEO) {
+            val imageView = ImageView(this).apply {
+                val heightPx = (220 * resources.displayMetrics.density).toInt()
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    heightPx
+                )
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setPadding(0, 16, 0, 16)
+            }
+            Glide.with(this)
+                .load(item.file)
+                .centerCrop()
+                .into(imageView)
+
+            val container = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                setPadding(48, 16, 48, 0)
+                addView(imageView)
+            }
+            builder.setView(container)
+        }
+
+        // Tombol hapus langsung dari dialog preview (kecuali untuk Data Aplikasi)
+        if (item.category != FileCategory.APP_DATA) {
+            builder.setNegativeButton("Hapus") { _, _ ->
+                confirmDeleteSingle(item)
+            }
+        }
+
+        builder.show()
+    }
+
+    private fun confirmDeleteSingle(item: FileItem) {
+        AlertDialog.Builder(this)
+            .setTitle("Hapus file ini?")
+            .setMessage("${item.name} (${FileUtils.formatSize(item.size)}) akan dihapus permanen.")
+            .setPositiveButton("Hapus") { _, _ -> performDelete(listOf(item)) }
+            .setNegativeButton("Batal", null)
+            .show()
     }
 
     private fun updateSelectionInfo() {

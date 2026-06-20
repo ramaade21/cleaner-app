@@ -15,7 +15,9 @@ import com.cleaner.filemanager.util.FileUtils
 
 class FileListAdapter(
     private val items: MutableList<FileItem>,
-    private val onSelectionChanged: () -> Unit
+    private val onSelectionChanged: () -> Unit,
+    private val onItemClick: (FileItem) -> Unit,
+    private val showCheckbox: Boolean = true
 ) : RecyclerView.Adapter<FileListAdapter.ViewHolder>() {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -40,13 +42,14 @@ class FileListAdapter(
         // Set listener ke null dulu sebelum set checked, supaya tidak memicu callback lama saat recycle
         holder.checkItem.setOnCheckedChangeListener(null)
         holder.checkItem.isChecked = item.isSelected
+        holder.checkItem.visibility = if (showCheckbox) View.VISIBLE else View.GONE
         holder.checkItem.setOnCheckedChangeListener { _, isChecked ->
             item.isSelected = isChecked
             onSelectionChanged()
         }
 
         holder.itemView.setOnClickListener {
-            holder.checkItem.isChecked = !holder.checkItem.isChecked
+            onItemClick(item)
         }
 
         // Thumbnail: gunakan Glide untuk gambar/video, icon statis untuk lainnya
@@ -69,6 +72,7 @@ class FileListAdapter(
             }
             FileCategory.DOCUMENT -> holder.imgThumb.setImageResource(R.drawable.ic_document)
             FileCategory.CACHE -> holder.imgThumb.setImageResource(R.drawable.ic_cache)
+            FileCategory.APP_DATA -> holder.imgThumb.setImageResource(R.drawable.ic_app_data)
             else -> holder.imgThumb.setImageResource(R.drawable.ic_file)
         }
     }
@@ -81,6 +85,15 @@ class FileListAdapter(
     }
 
     fun getSelectedItems(): List<FileItem> = items.filter { it.isSelected }
+
+    fun toggleSelection(item: FileItem) {
+        val index = items.indexOf(item)
+        if (index != -1) {
+            items[index].isSelected = !items[index].isSelected
+            notifyItemChanged(index)
+            onSelectionChanged()
+        }
+    }
 
     fun removeItems(removed: List<FileItem>) {
         items.removeAll(removed.toSet())
